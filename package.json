@@ -5,6 +5,7 @@
   "packageManager": "pnpm@10.17.1",
   "scripts": {
     "dev:mobile": "pnpm --filter @chat-with-ancients/mobile start",
+    "dev:api": "pnpm --filter @chat-with-ancients/api dev",
     "db:up": "docker compose -f compose.yml --env-file .env up -d mysql",
     "db:down": "docker compose -f compose.yml down",
     "db:push": "pnpm --filter @chat-with-ancients/db db:push",

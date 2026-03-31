@@ -1,0 +1,9 @@
+{
+  "name": "chat-with-ancients",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@10.17.1",
+  "scripts": {
+    "dev:mobile": "pnpm --filter @chat-with-ancients/mobile start"
+  }
+}

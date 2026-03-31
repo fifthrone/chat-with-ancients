@@ -4,6 +4,12 @@
   "version": "0.1.0",
   "packageManager": "pnpm@10.17.1",
   "scripts": {
-    "dev:mobile": "pnpm --filter @chat-with-ancients/mobile start"
+    "dev:mobile": "pnpm --filter @chat-with-ancients/mobile start",
+    "db:up": "docker compose -f compose.yml --env-file .env up -d mysql",
+    "db:down": "docker compose -f compose.yml down",
+    "db:push": "pnpm --filter @chat-with-ancients/db db:push",
+    "db:migrate": "pnpm --filter @chat-with-ancients/db db:migrate",
+    "db:seed": "pnpm --filter @chat-with-ancients/db db:seed",
+    "db:studio": "pnpm --filter @chat-with-ancients/db db:studio"
   }
 }

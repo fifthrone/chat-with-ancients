@@ -61,7 +61,7 @@ For physical devices, point `EXPO_PUBLIC_API_URL` at your machine’s LAN IP, e.
 
 | Piece | Host | Notes |
 | ----- | ---- | ----- |
-| Expo web (static) | **GitHub Pages** | Built by `.github/workflows/deploy-web.yml` on push to `main` |
+| Expo web (static) | **GitHub Pages** | Deployed by the `deploy-web` job in `.github/workflows/ci.yml` after CI passes on `main` |
 | API (Docker) | **Railway** | Builds `apps/api/Dockerfile` from repo root; entrypoint runs **`prisma migrate deploy`**, then starts Express |
 | MySQL | **Railway** | Managed MySQL (or equivalent) in the same project |
 

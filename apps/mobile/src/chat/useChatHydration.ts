@@ -1,13 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
 import type { UIMessage } from "ai";
-import { EXPO_PUBLIC_API_URL } from "../config/env";
+import { useCallback, useEffect, useState } from "react";
+import { getApiBaseUrl } from "../config/apiBase";
+import { fetchChatSessionToken } from "./chatSession";
 
 const chatClientIdStorageKey = "chat-with-ancients/client-id";
 
 const conversationClientOverrideKey = (slug: string) =>
   `chat-with-ancients/conversation-client/${slug}`;
-
-export const getApiBaseUrl = () => EXPO_PUBLIC_API_URL.replace(/\/+$/, "");
 
 type KeyValueStorage = {
   getItem: (key: string) => Promise<string | null>;
@@ -31,9 +30,8 @@ const getStorage = (): KeyValueStorage => {
   try {
     // Lazy-load to avoid crashing app startup when native module isn't linked.
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const AsyncStorage = require("@react-native-async-storage/async-storage").default as
-      | KeyValueStorage
-      | undefined;
+    const AsyncStorage = require("@react-native-async-storage/async-storage")
+      .default as KeyValueStorage | undefined;
     if (AsyncStorage) {
       cachedStorage = AsyncStorage;
       return cachedStorage;
@@ -76,9 +74,14 @@ type PersistedMessage = {
   createdAt: string;
 };
 
-const fetchConversation = async (slug: string, clientId: string) => {
+const fetchConversation = async (slug: string, token: string) => {
   const response = await fetch(
-    `${getApiBaseUrl()}/chat/conversation?slug=${encodeURIComponent(slug)}&clientId=${encodeURIComponent(clientId)}`,
+    `${getApiBaseUrl()}/chat/conversation?slug=${encodeURIComponent(slug)}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
   );
 
   if (!response.ok) {
@@ -89,24 +92,34 @@ const fetchConversation = async (slug: string, clientId: string) => {
   return body.messages;
 };
 
-const persistedToUIMessages = (rows: PersistedMessage[]): UIMessage[] =>
+/** Maps DB rows to UI messages; preserves `system` role for correct model context. */
+export const persistedToUIMessages = (rows: PersistedMessage[]): UIMessage[] =>
   rows.map((row) => ({
     id: `db-${row.id}`,
-    role: row.role === "system" ? "user" : row.role,
-    parts: [{ type: "text" as const, text: row.content, state: "done" as const }],
+    role: row.role,
+    parts: [
+      { type: "text" as const, text: row.content, state: "done" as const },
+    ],
   }));
 
 export type HydrationState =
   | { status: "loading" }
   | { status: "error"; message: string }
-  | { status: "ready"; clientId: string; initialMessages: UIMessage[] };
+  | {
+      status: "ready";
+      clientId: string;
+      chatToken: string;
+      initialMessages: UIMessage[];
+    };
 
 export function useChatHydration(slug: string): {
   hydration: HydrationState;
   startNewChat: () => Promise<void>;
 } {
   const [session, setSession] = useState(0);
-  const [hydration, setHydration] = useState<HydrationState>({ status: "loading" });
+  const [hydration, setHydration] = useState<HydrationState>({
+    status: "loading",
+  });
 
   const startNewChat = useCallback(async () => {
     await startNewConversationForSlug(slug);
@@ -120,13 +133,22 @@ export function useChatHydration(slug: string): {
     const load = async () => {
       try {
         const clientId = await getResolvedClientIdForSlug(slug);
-        const rows = await fetchConversation(slug, clientId);
+        const token = await fetchChatSessionToken(clientId);
+        const rows = await fetchConversation(slug, token);
         const initialMessages = persistedToUIMessages(rows);
         if (!cancelled) {
-          setHydration({ status: "ready", clientId, initialMessages });
+          setHydration({
+            status: "ready",
+            clientId,
+            chatToken: token,
+            initialMessages,
+          });
         }
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Unable to load chat history";
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Unable to load chat history";
         if (!cancelled) {
           setHydration({ status: "error", message });
         }
@@ -141,3 +163,5 @@ export function useChatHydration(slug: string): {
 
   return { hydration, startNewChat };
 }
+
+export { getApiBaseUrl } from "../config/apiBase";

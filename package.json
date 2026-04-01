@@ -10,8 +10,15 @@
     "db:down": "docker compose -f compose.yml down",
     "db:push": "pnpm --filter @chat-with-ancients/db db:push",
     "db:migrate": "pnpm --filter @chat-with-ancients/db db:migrate",
+    "db:migrate:deploy": "pnpm --filter @chat-with-ancients/db db:migrate:deploy",
     "db:seed": "pnpm --filter @chat-with-ancients/db db:seed",
     "db:studio": "pnpm --filter @chat-with-ancients/db db:studio",
-    "test:api": "pnpm --filter @chat-with-ancients/api test:run"
+    "lint": "biome check apps/api/src apps/mobile/src/chat apps/mobile/src/config apps/mobile/App.tsx",
+    "test:api": "pnpm --filter @chat-with-ancients/api test:run",
+    "test:mobile": "pnpm --filter @chat-with-ancients/mobile test:run",
+    "typecheck:mobile": "pnpm --filter @chat-with-ancients/mobile typecheck"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.10"
   }
 }

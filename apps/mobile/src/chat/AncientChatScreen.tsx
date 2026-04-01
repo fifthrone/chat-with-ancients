@@ -1,16 +1,19 @@
-import { AssistantChatTransport, useChatRuntime } from "@assistant-ui/react-ai-sdk";
+import {
+  AssistantChatTransport,
+  useChatRuntime,
+} from "@assistant-ui/react-ai-sdk";
 import {
   AssistantRuntimeProvider,
   ComposerPrimitive,
   MessagePrimitive,
   ThreadPrimitive,
 } from "@assistant-ui/react-native";
+import type { UIMessage } from "ai";
+import { SendHorizontal } from "lucide-react";
 import { useMemo } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
-import type { UIMessage } from "ai";
 import { useAncient } from "../api/ancients";
 import { getApiBaseUrl, useChatHydration } from "./useChatHydration";
-import { SendHorizontal } from "lucide-react";
 
 const UserMessage = () => (
   <MessagePrimitive.Root className="mb-3 max-w-[90%] self-end rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2">
@@ -27,19 +30,24 @@ const AssistantMessage = () => (
 export function NativeChatThread({
   slug,
   clientId,
+  chatToken,
   initialMessages,
 }: {
   slug: string;
   clientId: string;
+  chatToken: string;
   initialMessages: UIMessage[];
 }) {
   const transport = useMemo(
     () =>
       new AssistantChatTransport({
         api: `${getApiBaseUrl()}/api/chat`,
-        body: { slug, clientId },
+        body: { slug },
+        headers: {
+          Authorization: `Bearer ${chatToken}`,
+        },
       }),
-    [slug, clientId],
+    [slug, chatToken],
   );
 
   const runtime = useChatRuntime({
@@ -96,24 +104,34 @@ export function AncientChatScreen({ slug }: { slug: string }) {
             void startNewChat();
           }}
         >
-          <Text className="font-body text-2xl font-medium leading-none text-zinc-900">+</Text>
+          <Text className="font-body text-2xl font-medium leading-none text-zinc-900">
+            +
+          </Text>
         </Pressable>
       </View>
-      <Text className="mb-2 px-2 font-body text-sm text-textSecondary">Slug: {slug}</Text>
+      <Text className="mb-2 px-2 font-body text-sm text-textSecondary">
+        Slug: {slug}
+      </Text>
 
       {ancientQuery.isError ? (
-        <Text className="mb-2 px-2 font-body text-sm text-red-700">{ancientQuery.error.message}</Text>
+        <Text className="mb-2 px-2 font-body text-sm text-red-700">
+          {ancientQuery.error.message}
+        </Text>
       ) : null}
 
       {hydration.status === "loading" ? (
         <View className="flex-1 items-center justify-center gap-2">
           <ActivityIndicator color="#111827" />
-          <Text className="font-body text-sm text-textSecondary">Loading conversation...</Text>
+          <Text className="font-body text-sm text-textSecondary">
+            Loading conversation...
+          </Text>
         </View>
       ) : null}
 
       {hydration.status === "error" ? (
-        <Text className="px-2 font-body text-sm text-red-700">{hydration.message}</Text>
+        <Text className="px-2 font-body text-sm text-red-700">
+          {hydration.message}
+        </Text>
       ) : null}
 
       {hydration.status === "ready" ? (
@@ -121,6 +139,7 @@ export function AncientChatScreen({ slug }: { slug: string }) {
           key={`${slug}-${hydration.clientId}`}
           slug={slug}
           clientId={hydration.clientId}
+          chatToken={hydration.chatToken}
           initialMessages={hydration.initialMessages}
         />
       ) : null}

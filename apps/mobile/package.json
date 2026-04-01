@@ -6,7 +6,10 @@
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "typecheck": "tsc --noEmit",
+    "test": "npx vitest",
+    "test:run": "npx vitest run"
   },
   "dependencies": {
     "@assistant-ui/react": "^0.12.21",
@@ -31,11 +34,11 @@
     "react-native-web": "^0.21.0"
   },
   "devDependencies": {
-    "@types/mapbox-gl": "^3.5.0",
     "@types/react": "~19.1.0",
     "nativewind": "^4.2.1",
     "tailwindcss": "^3.4.17",
-    "typescript": "~5.9.2"
+    "typescript": "~5.9.2",
+    "vitest": "^3.2.4"
   },
   "private": true
 }

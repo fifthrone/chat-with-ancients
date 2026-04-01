@@ -13,15 +13,20 @@ export default function App() {
   const [isBootstrapped, setIsBootstrapped] = useState(false);
 
   useEffect(() => {
-    syncRouterWithLinking(router);
+    const unsubscribe = syncRouterWithLinking(router);
     setIsBootstrapped(true);
+    return () => {
+      unsubscribe?.();
+    };
   }, []);
 
   if (!isBootstrapped) {
     return (
       <View className="flex-1 items-center justify-center gap-3 bg-background">
         <ActivityIndicator color="#111827" />
-        <Text className="font-body text-sm text-textSecondary">Loading app...</Text>
+        <Text className="font-body text-sm text-textSecondary">
+          Loading app...
+        </Text>
       </View>
     );
   }

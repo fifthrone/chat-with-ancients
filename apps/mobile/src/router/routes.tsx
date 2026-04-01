@@ -8,8 +8,22 @@ import { getAncientImageSource, getAncientInitials, getAncientWebImageUrl } from
 import { NativeChatSheet } from "../chat/NativeChatSheet";
 import { WebChatPanel } from "../chat/WebChatPanel";
 import { EXPO_PUBLIC_API_URL, EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN } from "../config/env";
+import type { Map as MapboxMap } from "mapbox-gl";
 
 type Coordinate = [number, number];
+
+/** Subset of @rnmapbox/maps Camera ref used for fitBounds / flyTo. */
+type MapCameraRef = {
+  fitBounds(ne: Coordinate, sw: Coordinate, padding: number[], duration: number): void;
+  flyTo(coordinate: Coordinate, duration: number): void;
+};
+
+type NativeMapboxModule = {
+  setAccessToken?: (token: string) => void;
+  MapView: ComponentType<Record<string, unknown>>;
+  Camera: ComponentType<Record<string, unknown>>;
+  PointAnnotation: ComponentType<Record<string, unknown>>;
+};
 
 const defaultCenter: Coordinate = [12.4964, 41.9028];
 
@@ -43,9 +57,9 @@ function RootLayout() {
 
 function MapStubScreen() {
   const ancientsQuery = useAncients();
-  const cameraRef = useRef<any>(null);
-  const webMapContainerRef = useRef<any>(null);
-  const webMapInstanceRef = useRef<any>(null);
+  const cameraRef = useRef<MapCameraRef | null>(null);
+  const webMapContainerRef = useRef<HTMLDivElement | null>(null);
+  const webMapInstanceRef = useRef<MapboxMap | null>(null);
   const hasMapboxToken = EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN.trim().length > 0;
   const isNative = Platform.OS === "ios" || Platform.OS === "android";
   const isWeb = Platform.OS === "web";
@@ -72,9 +86,21 @@ function MapStubScreen() {
     }
   }, [isNative]);
 
-  const mapboxModule = useMemo(() => {
+  const mapboxModule = useMemo((): NativeMapboxModule | null => {
     if (!mapbox) return null;
-    return (mapbox.default ?? mapbox) as Record<string, any>;
+    const mod = (mapbox.default ?? mapbox) as Record<string, unknown>;
+    const MapView = mod.MapView;
+    const Camera = mod.Camera;
+    const PointAnnotation = mod.PointAnnotation;
+    if (typeof MapView !== "function" || typeof Camera !== "function" || typeof PointAnnotation !== "function") {
+      return null;
+    }
+    return {
+      setAccessToken: mod.setAccessToken as NativeMapboxModule["setAccessToken"],
+      MapView: MapView as NativeMapboxModule["MapView"],
+      Camera: Camera as NativeMapboxModule["Camera"],
+      PointAnnotation: PointAnnotation as NativeMapboxModule["PointAnnotation"],
+    };
   }, [mapbox]);
 
   useEffect(() => {
@@ -100,7 +126,7 @@ function MapStubScreen() {
     if (markerAncients.length === 0 || !webMapContainerRef.current) return;
 
     let isCancelled = false;
-    let map: any;
+    let map: MapboxMap | undefined;
 
     const initWebMap = async () => {
       try {
@@ -108,8 +134,7 @@ function MapStubScreen() {
         if (isCancelled || !webMapContainerRef.current) return;
 
         const mapboxgl = mapboxGlModule.default;
-        const webDocument = (globalThis as any).document;
-        if (!webDocument) {
+        if (typeof document === "undefined") {
           throw new Error("Document is unavailable on this platform");
         }
 
@@ -126,7 +151,7 @@ function MapStubScreen() {
 
         const bounds = new mapboxgl.LngLatBounds();
         for (const ancient of markerAncients) {
-          const markerNode = webDocument.createElement("button");
+          const markerNode = document.createElement("button");
           const imageUrl = getAncientWebImageUrl(ancient.slug, ancient.avatarUrl);
           markerNode.type = "button";
           markerNode.textContent = imageUrl ? "" : getAncientInitials(ancient.name);
@@ -201,7 +226,7 @@ function MapStubScreen() {
       map.easeTo({ padding, duration: 300 });
     }
 
-    const container = map.getContainer() as HTMLElement | null;
+    const container = map.getContainer();
     if (!container) return;
     const ctrls = container.querySelectorAll(
       ".mapboxgl-ctrl-bottom-right, .mapboxgl-ctrl-bottom-left, .mapboxgl-ctrl-top-right",
@@ -325,9 +350,7 @@ function MapStubScreen() {
     );
   }
 
-  const MapView = mapboxModule.MapView as ComponentType<any>;
-  const Camera = mapboxModule.Camera as ComponentType<any>;
-  const PointAnnotation = mapboxModule.PointAnnotation as ComponentType<any>;
+  const { MapView, Camera, PointAnnotation } = mapboxModule;
 
   return (
     <View className="flex-1">

@@ -16,7 +16,8 @@ const LOCAL_ANCIENT_IMAGES: Record<string, ImageSourcePropType> = {
   "sun-tzu": require("../../assets/ancients/sun-tzu.png"),
 };
 
-export const getAncientInitials = (name: string) => name.slice(0, 2).toUpperCase();
+export const getAncientInitials = (name: string) =>
+  name.slice(0, 2).toUpperCase();
 
 export const getAncientImageSource = (
   slug: string,

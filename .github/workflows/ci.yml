@@ -11,6 +11,25 @@ permissions:
 jobs:
   ci:
     runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: cwa_ci
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=8s
+          --health-timeout=5s
+          --health-retries=20
+
+    env:
+      CHAT_SESSION_SECRET: ci-chat-session-secret-minimum-32-characters
+      DATABASE_URL: mysql://root:root@127.0.0.1:3306/cwa_ci
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,8 +47,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Biome (lint + format check)
+        run: pnpm lint
+
       - name: Prisma generate (db package)
         run: pnpm --filter @chat-with-ancients/db db:generate
+
+      - name: Prisma migrate deploy (verify migrations)
+        run: pnpm db:migrate:deploy
 
       - name: API typecheck
         run: pnpm --filter @chat-with-ancients/api typecheck
@@ -37,9 +62,18 @@ jobs:
       - name: API tests
         run: pnpm --filter @chat-with-ancients/api test:run
 
+      - name: Mobile typecheck
+        run: pnpm typecheck:mobile
+
+      - name: Mobile unit tests
+        run: pnpm test:mobile
+
       - name: Expo web export (smoke)
         working-directory: apps/mobile
         env:
           EXPO_PUBLIC_API_URL: https://example.com
           EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN: pk.placeholder
         run: npx expo export --platform web
+
+      - name: Docker build API image (smoke)
+        run: docker build -f apps/api/Dockerfile .

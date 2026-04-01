@@ -8,11 +8,13 @@ if [ -z "$DATABASE_URL" ]; then
   exit 1
 fi
 
-echo "Applying Prisma schema (db push)..."
-pnpm --filter @chat-with-ancients/db run db:push
+echo "Applying Prisma migrations (migrate deploy)..."
+pnpm --filter @chat-with-ancients/db run db:migrate:deploy
 
-echo "Seeding database (idempotent upserts)..."
-pnpm --filter @chat-with-ancients/db run db:seed
+if [ "${RUN_DB_SEED:-false}" = "true" ]; then
+  echo "Seeding database (idempotent upserts)..."
+  pnpm --filter @chat-with-ancients/db run db:seed
+fi
 
 echo "Starting API..."
 exec pnpm --filter @chat-with-ancients/api start

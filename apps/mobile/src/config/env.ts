@@ -1,2 +1,3 @@
 export const EXPO_PUBLIC_API_URL = process.env.EXPO_PUBLIC_API_URL ?? "";
-export const EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN = process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN ?? "";
+export const EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN =
+  process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN ?? "";

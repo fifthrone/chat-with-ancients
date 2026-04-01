@@ -1,33 +1,41 @@
-import { AssistantChatTransport, useChatRuntime } from "@assistant-ui/react-ai-sdk";
 import {
   AssistantRuntimeProvider,
   ComposerPrimitive,
   MessagePrimitive,
   ThreadPrimitive,
 } from "@assistant-ui/react";
-import { createElement, useMemo } from "react";
+import {
+  AssistantChatTransport,
+  useChatRuntime,
+} from "@assistant-ui/react-ai-sdk";
 import type { UIMessage } from "ai";
+import { Plus, SendHorizontal, X } from "lucide-react";
+import { createElement, useMemo } from "react";
 import { useAncient } from "../api/ancients";
 import { getAncientInitials, getAncientWebImageUrl } from "./ancientImages";
 import { getApiBaseUrl, useChatHydration } from "./useChatHydration";
-import { Plus, SendHorizontal, X } from "lucide-react";
 
 function WebChatThread({
   slug,
   clientId,
+  chatToken,
   initialMessages,
 }: {
   slug: string;
   clientId: string;
+  chatToken: string;
   initialMessages: UIMessage[];
 }) {
   const transport = useMemo(
     () =>
       new AssistantChatTransport({
         api: `${getApiBaseUrl()}/api/chat`,
-        body: { slug, clientId },
+        body: { slug },
+        headers: {
+          Authorization: `Bearer ${chatToken}`,
+        },
       }),
-    [slug, clientId],
+    [slug, chatToken],
   );
 
   const runtime = useChatRuntime({
@@ -91,7 +99,7 @@ function WebChatThread({
           <ComposerPrimitive.Send
             style={{
               borderRadius: 12,
-            //   backgroundColor: "#111827",
+              //   backgroundColor: "#111827",
               padding: "10px 16px",
               border: "none",
               cursor: "pointer",
@@ -387,6 +395,7 @@ export function WebChatPanel({
             key: `${slug}-${hydration.clientId}`,
             slug,
             clientId: hydration.clientId,
+            chatToken: hydration.chatToken,
             initialMessages: hydration.initialMessages,
           }),
   );

@@ -1,8 +1,11 @@
-import { createRootRoute, createRoute, Outlet, useNavigate } from "@tanstack/react-router";
+import { createRootRoute, createRoute, Outlet } from "@tanstack/react-router";
 import { StatusBar } from "expo-status-bar";
 import { type ComponentType, createElement, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Platform, Pressable, Text, View } from "react-native";
-import { useAncient, useAncients } from "../api/ancients";
+import { type Ancient, useAncients } from "../api/ancients";
+import { AncientChatScreen } from "../chat/AncientChatScreen";
+import { NativeChatSheet } from "../chat/NativeChatSheet";
+import { WebChatPanel } from "../chat/WebChatPanel";
 import { EXPO_PUBLIC_API_URL, EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN } from "../config/env";
 
 type Coordinate = [number, number];
@@ -19,7 +22,6 @@ function RootLayout() {
 }
 
 function MapStubScreen() {
-  const navigate = useNavigate({ from: "/" });
   const ancientsQuery = useAncients();
   const cameraRef = useRef<any>(null);
   const webMapContainerRef = useRef<any>(null);
@@ -28,6 +30,9 @@ function MapStubScreen() {
   const isWeb = Platform.OS === "web";
   const [webMapError, setWebMapError] = useState<string | null>(null);
   const isDev = typeof __DEV__ !== "undefined" ? __DEV__ : false;
+
+  const [selectedAncientSlug, setSelectedAncientSlug] = useState<string | null>(null);
+  const [selectedAncient, setSelectedAncient] = useState<Ancient | null>(null);
 
   const markerAncients = useMemo(
     () =>
@@ -39,7 +44,6 @@ function MapStubScreen() {
 
   const mapbox = useMemo(() => {
     if (!isNative) return null;
-    // Expo Go doesn't include this native module; fall back instead of crashing.
     try {
       return require("@rnmapbox/maps");
     } catch {
@@ -113,7 +117,7 @@ function MapStubScreen() {
           markerNode.style.cursor = "pointer";
           markerNode.onclick = () => {
             if (!ancient.slug) return;
-            navigate({ to: "/chat/$slug", params: { slug: ancient.slug } });
+            setSelectedAncientSlug(ancient.slug);
           };
 
           new mapboxgl.Marker({ element: markerNode })
@@ -149,7 +153,6 @@ function MapStubScreen() {
     hasMapboxToken,
     isWeb,
     markerAncients,
-    navigate,
   ]);
 
   if (!isNative && !isWeb) {
@@ -218,16 +221,24 @@ function MapStubScreen() {
 
   if (isWeb) {
     return (
-      <View className="flex-1">
-        {webMapError ? (
-          <View className="absolute inset-x-4 top-4 z-10 rounded-md bg-red-950/80 p-3">
-            <Text className="font-body text-xs text-red-200">{webMapError}</Text>
-          </View>
+      <View style={{ flex: 1, flexDirection: "row" }}>
+        <View style={{ flex: 1 }}>
+          {webMapError ? (
+            <View className="absolute inset-x-4 top-4 z-10 rounded-md bg-red-950/80 p-3">
+              <Text className="font-body text-xs text-red-200">{webMapError}</Text>
+            </View>
+          ) : null}
+          {createElement("div", {
+            ref: webMapContainerRef,
+            style: { width: "100%", height: "100%" },
+          })}
+        </View>
+        {selectedAncientSlug ? (
+          <WebChatPanel
+            slug={selectedAncientSlug}
+            onClose={() => setSelectedAncientSlug(null)}
+          />
         ) : null}
-        {createElement("div", {
-          ref: webMapContainerRef,
-          style: { width: "100%", height: "100%" },
-        })}
       </View>
     );
   }
@@ -263,12 +274,16 @@ function MapStubScreen() {
             key={ancient.slug}
             id={ancient.slug}
             coordinate={[ancient.longitude, ancient.latitude]}
+            onSelected={() => {
+              if (!ancient.slug) return;
+              setSelectedAncient(ancient);
+            }}
           >
             <Pressable
               className="h-10 w-10 items-center justify-center rounded-full border-2 border-background bg-accent"
               onPress={() => {
                 if (!ancient.slug) return;
-                navigate({ to: "/chat/$slug", params: { slug: ancient.slug } });
+                setSelectedAncient(ancient);
               }}
             >
               <Text className="font-body text-xs font-semibold text-background">
@@ -278,31 +293,19 @@ function MapStubScreen() {
           </PointAnnotation>
         ))}
       </MapView>
+      {selectedAncient ? (
+        <NativeChatSheet
+          ancient={selectedAncient}
+          onClose={() => setSelectedAncient(null)}
+        />
+      ) : null}
     </View>
   );
 }
 
 function ChatStubScreen() {
   const { slug } = chatRoute.useParams();
-  const ancientQuery = useAncient(slug);
-
-  return (
-    <View className="flex-1 items-center justify-center gap-3 px-6">
-      <Text className="font-display text-3xl text-textPrimary">Ancient Chat</Text>
-      <Text className="font-body text-base text-textSecondary">Slug: {slug}</Text>
-      {ancientQuery.isLoading ? <Text className="font-body text-sm text-textSecondary">Loading...</Text> : null}
-      {ancientQuery.isError ? (
-        <Text className="font-body text-sm text-red-300">{ancientQuery.error.message}</Text>
-      ) : null}
-      {ancientQuery.data ? (
-        <>
-          <Text className="font-body text-base text-textPrimary">{ancientQuery.data.name}</Text>
-          <Text className="font-body text-sm text-textSecondary">{ancientQuery.data.region}</Text>
-          <Text className="font-body text-sm text-textSecondary">{ancientQuery.data.shortBio}</Text>
-        </>
-      ) : null}
-    </View>
-  );
+  return <AncientChatScreen slug={slug} />;
 }
 
 const rootRoute = createRootRoute({

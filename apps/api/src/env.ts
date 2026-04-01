@@ -27,6 +27,8 @@ export const env = {
   PORT: asNumber(process.env.PORT, 4000),
   DATABASE_URL: process.env.DATABASE_URL ?? "",
   CORS_ORIGINS: splitOrigins(process.env.CORS_ORIGINS),
+  GEMINI_API_KEY: process.env.GEMINI_API_KEY ?? "",
+  CHAT_HISTORY_LIMIT: asNumber(process.env.CHAT_HISTORY_LIMIT, 50),
 };
 
 if (!env.DATABASE_URL) {

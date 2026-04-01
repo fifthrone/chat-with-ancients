@@ -8,6 +8,7 @@ import {
 import { createElement, useMemo } from "react";
 import type { UIMessage } from "ai";
 import { useAncient } from "../api/ancients";
+import { getAncientInitials, getAncientWebImageUrl } from "./ancientImages";
 import { getApiBaseUrl, useChatHydration } from "./useChatHydration";
 
 function WebChatThread({
@@ -50,6 +51,7 @@ function WebChatThread({
             overflowY: "auto",
             display: "flex",
             flexDirection: "column",
+            padding: 14,
           }}
         >
           <ThreadPrimitive.Messages
@@ -65,23 +67,22 @@ function WebChatThread({
             display: "flex",
             alignItems: "flex-end",
             gap: 8,
-            borderTop: "1px solid #3f3f46",
+            borderTop: "1px solid #e5e7eb",
             padding: 12,
+            backgroundColor: "rgba(255,255,255,0.72)",
           }}
         >
           <ComposerPrimitive.Input
             placeholder="Message..."
             style={{
               flex: 1,
-              minHeight: 40,
-              maxHeight: 128,
               borderRadius: 12,
-              border: "1px solid #3f3f46",
+              border: "1px solid #d1d5db",
               padding: "8px 12px",
               fontFamily: "system-ui",
               fontSize: 14,
-              color: "#ecf0ff",
-              backgroundColor: "transparent",
+              color: "#111827",
+              backgroundColor: "#ffffff",
               outline: "none",
               resize: "none",
             }}
@@ -89,14 +90,14 @@ function WebChatThread({
           <ComposerPrimitive.Send
             style={{
               borderRadius: 12,
-              backgroundColor: "#7c9dff",
+              backgroundColor: "#111827",
               padding: "10px 16px",
               border: "none",
               cursor: "pointer",
               fontFamily: "system-ui",
               fontSize: 14,
               fontWeight: 600,
-              color: "#0b1020",
+              color: "#ffffff",
             }}
           >
             Send
@@ -115,9 +116,9 @@ function WebUserMessage() {
         maxWidth: "85%",
         alignSelf: "flex-end",
         borderRadius: 12,
-        backgroundColor: "#7c9dff",
+        backgroundColor: "#111827",
         padding: "8px 12px",
-        color: "#0b1020",
+        color: "#ffffff",
         fontSize: 14,
         fontFamily: "system-ui",
         lineHeight: 1.5,
@@ -136,9 +137,10 @@ function WebAssistantMessage() {
         maxWidth: "85%",
         alignSelf: "flex-start",
         borderRadius: 12,
-        backgroundColor: "#27272a",
+        backgroundColor: "#ffffff",
+        border: "1px solid #e5e7eb",
         padding: "8px 12px",
-        color: "#ecf0ff",
+        color: "#1f2937",
         fontSize: 14,
         fontFamily: "system-ui",
         lineHeight: 1.5,
@@ -158,76 +160,158 @@ export function WebChatPanel({
 }) {
   const ancientQuery = useAncient(slug);
   const hydration = useChatHydration(slug);
+  const imageUrl = ancientQuery.data
+    ? getAncientWebImageUrl(ancientQuery.data.slug, ancientQuery.data.avatarUrl)
+    : null;
 
   return createElement(
     "div",
     {
       style: {
         width: 400,
-        height: "100%",
+        height: "calc(100% - 24px)",
+        margin: 12,
+        position: "relative" as const,
         display: "flex",
         flexDirection: "column" as const,
-        backgroundColor: "#0b1020",
-        borderLeft: "1px solid #1e293b",
+        backgroundColor: "rgba(255,255,255,0.56)",
+        backdropFilter: "blur(18px)",
+        WebkitBackdropFilter: "blur(18px)",
+        border: "1px solid rgba(255,255,255,0.64)",
+        borderRadius: 20,
+        boxShadow: "0 10px 28px rgba(17, 24, 39, 0.18)",
+        overflow: "hidden",
       },
     },
+    createElement(
+      "button",
+      {
+        onClick: onClose,
+        style: {
+          position: "absolute" as const,
+          top: 12,
+          right: 12,
+          background: "none",
+          border: "none",
+          color: "#4b5563",
+          fontSize: 24,
+          cursor: "pointer",
+          padding: "4px 8px",
+          lineHeight: 1,
+          zIndex: 1,
+        },
+      },
+      "\u00D7",
+    ),
     createElement(
       "div",
       {
         style: {
           display: "flex",
           alignItems: "center",
-          justifyContent: "space-between",
+          justifyContent: "center",
           padding: "16px 16px 12px",
-          borderBottom: "1px solid #1e293b",
+          borderBottom: "1px solid #e5e7eb",
+          backgroundColor: "rgba(255,255,255,0.5)",
         },
       },
       createElement(
         "div",
-        null,
-        createElement(
-          "h2",
-          {
-            style: {
-              margin: 0,
-              fontSize: 20,
-              fontWeight: 700,
-              color: "#ecf0ff",
-              fontFamily: "system-ui",
-            },
-          },
-          ancientQuery.data?.name ?? "Loading...",
-        ),
-        ancientQuery.data?.eraLabel
-          ? createElement(
-              "p",
-              {
-                style: {
-                  margin: "4px 0 0",
-                  fontSize: 12,
-                  color: "#9faecd",
-                  fontFamily: "system-ui",
-                },
-              },
-              ancientQuery.data.eraLabel,
-            )
-          : null,
-      ),
-      createElement(
-        "button",
         {
-          onClick: onClose,
           style: {
-            background: "none",
-            border: "none",
-            color: "#9faecd",
-            fontSize: 24,
-            cursor: "pointer",
-            padding: "4px 8px",
-            lineHeight: 1,
+            display: "flex",
+            alignItems: "center",
+            flexDirection: "column",
+            textAlign: "center",
+            gap: 8,
+            flex: 1,
           },
         },
-        "\u00D7",
+        imageUrl
+          ? createElement("img", {
+              src: imageUrl,
+              alt: `${ancientQuery.data?.name ?? "Ancient"} avatar`,
+              style: {
+                width: 120,
+                height: 140,
+                objectFit: "contain",
+              },
+            })
+          : createElement(
+              "div",
+              {
+                style: {
+                  width: 56,
+                  height: 56,
+                  borderRadius: "9999px",
+                  backgroundColor: "#111827",
+                  color: "#ffffff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontWeight: 700,
+                  fontFamily: "system-ui",
+                  fontSize: 14,
+                },
+              },
+              getAncientInitials(ancientQuery.data?.name ?? "Ancient"),
+            ),
+        createElement(
+          "div",
+          {
+            style: {
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              minHeight: 56,
+              alignItems: "center",
+            },
+          },
+          createElement(
+            "h2",
+            {
+              style: {
+                margin: 0,
+                fontSize: 20,
+                fontWeight: 700,
+                color: "#0f172a",
+                fontFamily: "system-ui",
+              },
+            },
+            ancientQuery.data?.name ?? "Loading...",
+          ),
+          ancientQuery.data?.eraLabel
+            ? createElement(
+                "p",
+                {
+                  style: {
+                    margin: "4px 0 0",
+                    fontSize: 12,
+                    color: "#475569",
+                    fontFamily: "system-ui",
+                  },
+                },
+                ancientQuery.data.eraLabel,
+              )
+            : null,
+          ancientQuery.data?.shortBio
+            ? createElement(
+                "p",
+                {
+                  style: {
+                    margin: "6px 0 0",
+                    fontSize: 13,
+                    lineHeight: 1.35,
+                    color: "#64748b",
+                    fontFamily: "system-ui",
+                    maxWidth: 280,
+                    textAlign: "center",
+                  },
+                },
+                ancientQuery.data.shortBio,
+              )
+            : null,
+        ),
       ),
     ),
     hydration.status === "loading"
@@ -239,7 +323,7 @@ export function WebChatPanel({
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              color: "#9faecd",
+              color: "#64748b",
               fontFamily: "system-ui",
               fontSize: 14,
             },

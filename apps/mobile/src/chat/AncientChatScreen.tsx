@@ -12,13 +12,13 @@ import { useAncient } from "../api/ancients";
 import { getApiBaseUrl, useChatHydration } from "./useChatHydration";
 
 const UserMessage = () => (
-  <MessagePrimitive.Root className="mb-3 max-w-[90%] self-end rounded-lg bg-accent px-3 py-2">
+  <MessagePrimitive.Root className="mb-3 max-w-[90%] self-end rounded-xl border border-zinc-300 bg-zinc-900 px-3 py-2">
     <MessagePrimitive.Content />
   </MessagePrimitive.Root>
 );
 
 const AssistantMessage = () => (
-  <MessagePrimitive.Root className="mb-3 max-w-[90%] self-start rounded-lg bg-zinc-800 px-3 py-2">
+  <MessagePrimitive.Root className="mb-3 max-w-[90%] self-start rounded-xl border border-slate-200 bg-white px-3 py-2">
     <MessagePrimitive.Content />
   </MessagePrimitive.Root>
 );
@@ -51,22 +51,22 @@ export function NativeChatThread({
     <AssistantRuntimeProvider runtime={runtime}>
       <ThreadPrimitive.Root className="flex-1">
         <ThreadPrimitive.Messages
-          className="flex-1 px-3"
-          contentContainerStyle={{ flexGrow: 1, paddingVertical: 8 }}
+          className="flex-1 px-4"
+          contentContainerStyle={{ flexGrow: 1, paddingVertical: 14 }}
           components={{
             UserMessage,
             AssistantMessage,
           }}
         />
-        <ComposerPrimitive.Root className="flex-row items-end gap-2 border-t border-zinc-700 px-3 py-3">
+        <ComposerPrimitive.Root className="flex-row items-end gap-2 border-t border-slate-200 bg-white/95 px-4 py-3">
           <ComposerPrimitive.Input
-            className="max-h-32 min-h-10 flex-1 rounded-xl border border-zinc-700 px-3 py-2 font-body text-textPrimary"
+            className="max-h-32 min-h-10 flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 font-body text-slate-900"
             placeholder="Message..."
-            placeholderTextColor="#a1a1aa"
+            placeholderTextColor="#94a3b8"
             multiline
           />
-          <ComposerPrimitive.Send className="rounded-xl bg-accent px-4 py-3">
-            <Text className="font-body text-sm font-semibold text-background">Send</Text>
+          <ComposerPrimitive.Send className="rounded-xl bg-zinc-900 px-4 py-3">
+            <Text className="font-body text-sm font-semibold text-zinc-100">Send</Text>
           </ComposerPrimitive.Send>
         </ComposerPrimitive.Root>
       </ThreadPrimitive.Root>

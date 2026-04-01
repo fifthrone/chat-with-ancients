@@ -3,13 +3,17 @@ import {
   Animated,
   Dimensions,
   Pressable,
+  SafeAreaView,
   Text,
   View,
   ActivityIndicator,
   KeyboardAvoidingView,
+  Image,
   Platform,
 } from "react-native";
+import { BlurView } from "expo-blur";
 import type { Ancient } from "../api/ancients";
+import { getAncientImageSource, getAncientInitials } from "./ancientImages";
 import { useChatHydration } from "./useChatHydration";
 import { NativeChatThread } from "./AncientChatScreen";
 
@@ -26,6 +30,7 @@ export function NativeChatSheet({
   const [expanded, setExpanded] = useState(false);
   const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
   const hydration = useChatHydration(ancient.slug);
+  const imageSource = getAncientImageSource(ancient.slug, ancient.avatarUrl);
 
   const targetY = expanded ? 0 : SCREEN_HEIGHT - PEEK_HEIGHT;
 
@@ -76,46 +81,92 @@ export function NativeChatSheet({
       <Animated.View
         style={{
           position: "absolute",
-          left: 0,
-          right: 0,
+          left: 10,
+          right: 10,
+          top: 10,
           height: SCREEN_HEIGHT,
           transform: [{ translateY }],
-          backgroundColor: "#0b1020",
-          borderTopLeftRadius: expanded ? 0 : 20,
-          borderTopRightRadius: expanded ? 0 : 20,
+          backgroundColor: "transparent",
+          borderRadius: 20,
+          borderWidth: 1,
+          borderColor: "rgba(255,255,255,0.45)",
+          shadowColor: "#111827",
+          shadowOpacity: 0.18,
+          shadowOffset: { width: 0, height: 8 },
+          shadowRadius: 18,
+          elevation: 8,
+          overflow: "hidden",
         }}
       >
-        <KeyboardAvoidingView
-          style={{ flex: 1 }}
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-        >
-          {!expanded ? (
-            <View className="px-5 pt-4 pb-5">
+        <BlurView intensity={45} tint="light" style={{ flex: 1 }}>
+          <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+          >
+            <SafeAreaView style={{ flex: 1 }}>
+            {!expanded ? (
+              <View className="px-5 pt-4 pb-5">
               <View className="mb-3 h-1 w-10 self-center rounded-full bg-zinc-600" />
+              {imageSource ? (
+                <Image source={imageSource} style={{ width: 56, height: 56, borderRadius: 28 }} />
+              ) : (
+                <View className="h-14 w-14 items-center justify-center rounded-full bg-zinc-900">
+                  <Text className="font-body text-base font-semibold text-white">
+                    {getAncientInitials(ancient.name)}
+                  </Text>
+                </View>
+              )}
               <Text className="font-display text-2xl text-textPrimary">{ancient.name}</Text>
               <Text className="mt-1 font-body text-sm text-textSecondary">{ancient.eraLabel}</Text>
               <Text className="mt-2 font-body text-sm leading-5 text-textSecondary" numberOfLines={3}>
                 {ancient.shortBio}
               </Text>
               <Pressable
-                className="mt-4 items-center rounded-xl bg-accent py-3"
+                className="mt-4 items-center rounded-xl bg-zinc-900 py-3"
                 onPress={() => setExpanded(true)}
               >
-                <Text className="font-body text-sm font-semibold text-background">Chat</Text>
+                <Text className="font-body text-sm font-semibold text-white">Chat</Text>
               </Pressable>
-            </View>
-          ) : (
-            <View className="flex-1 pt-12">
-              <View className="flex-row items-center justify-between px-4 pb-3 border-b border-zinc-800">
-                <View className="flex-1">
-                  <Text className="font-display text-xl text-textPrimary">{ancient.name}</Text>
-                  <Text className="font-body text-xs text-textSecondary">{ancient.eraLabel}</Text>
+              </View>
+            ) : (
+              <View className="flex-1 pt-2">
+                <View
+                  style={{
+                    alignItems: "center",
+                    paddingHorizontal: 16,
+                    paddingBottom: 12,
+                    borderBottomWidth: 1,
+                    borderBottomColor: "#e5e7eb",
+                    backgroundColor: "rgba(255,255,255,0.45)",
+                    position: "relative",
+                  }}
+                >
+                  <View className="flex-1 items-center">
+                  {imageSource ? (
+                    <Image source={imageSource} style={{ width: 56, height: 56, borderRadius: 28 }} />
+                  ) : (
+                    <View className="h-14 w-14 items-center justify-center rounded-full bg-zinc-900">
+                      <Text className="font-body text-sm font-semibold text-white">
+                        {getAncientInitials(ancient.name)}
+                      </Text>
+                    </View>
+                  )}
+                  <View className="mt-2 items-center justify-center">
+                    <Text className="font-display text-xl text-slate-900">{ancient.name}</Text>
+                    <Text className="font-body text-xs text-slate-600">{ancient.eraLabel}</Text>
+                    <Text
+                      className="mt-1 px-4 text-center font-body text-xs leading-4 text-slate-500"
+                      numberOfLines={2}
+                    >
+                      {ancient.shortBio}
+                    </Text>
+                  </View>
                 </View>
                 <Pressable
-                  className="rounded-lg bg-surface px-3 py-2"
+                  className="absolute right-4 top-1 rounded-lg bg-white px-3 py-2"
                   onPress={handleClose}
                 >
-                  <Text className="font-body text-sm text-textSecondary">Close</Text>
+                  <Text className="font-body text-sm text-slate-500">Close</Text>
                 </Pressable>
               </View>
 
@@ -140,9 +191,11 @@ export function NativeChatSheet({
                   />
                 )}
               </View>
-            </View>
-          )}
-        </KeyboardAvoidingView>
+              </View>
+            )}
+            </SafeAreaView>
+          </KeyboardAvoidingView>
+        </BlurView>
       </Animated.View>
     </View>
   );

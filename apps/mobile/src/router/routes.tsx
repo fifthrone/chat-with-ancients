@@ -1,9 +1,10 @@
 import { createRootRoute, createRoute, Outlet } from "@tanstack/react-router";
 import { StatusBar } from "expo-status-bar";
 import { type ComponentType, createElement, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Platform, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Image, Platform, Pressable, Text, View } from "react-native";
 import { type Ancient, useAncients } from "../api/ancients";
 import { AncientChatScreen } from "../chat/AncientChatScreen";
+import { getAncientImageSource, getAncientInitials, getAncientWebImageUrl } from "../chat/ancientImages";
 import { NativeChatSheet } from "../chat/NativeChatSheet";
 import { WebChatPanel } from "../chat/WebChatPanel";
 import { EXPO_PUBLIC_API_URL, EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN } from "../config/env";
@@ -25,6 +26,7 @@ function MapStubScreen() {
   const ancientsQuery = useAncients();
   const cameraRef = useRef<any>(null);
   const webMapContainerRef = useRef<any>(null);
+  const webMapInstanceRef = useRef<any>(null);
   const hasMapboxToken = EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN.trim().length > 0;
   const isNative = Platform.OS === "ios" || Platform.OS === "android";
   const isWeb = Platform.OS === "web";
@@ -97,21 +99,22 @@ function MapStubScreen() {
 
         map = new mapboxgl.Map({
           container: webMapContainerRef.current,
-          style: "mapbox://styles/mapbox/streets-v12",
+          style: "mapbox://styles/mapbox/light-v11",
           center: defaultCenter,
           zoom: 1.5,
         });
+        webMapInstanceRef.current = map;
 
         const bounds = new mapboxgl.LngLatBounds();
         for (const ancient of markerAncients) {
           const markerNode = webDocument.createElement("button");
+          const imageUrl = getAncientWebImageUrl(ancient.slug, ancient.avatarUrl);
           markerNode.type = "button";
-          markerNode.textContent = ancient.name.slice(0, 2).toUpperCase();
-          markerNode.style.width = "40px";
-          markerNode.style.height = "40px";
-          markerNode.style.borderRadius = "9999px";
-          markerNode.style.border = "2px solid #131313";
-          markerNode.style.background = "#f7b500";
+          markerNode.textContent = imageUrl ? "" : getAncientInitials(ancient.name);
+          markerNode.style.width = "60px";
+          markerNode.style.height = "80px";
+          markerNode.style.borderRadius = "0";
+          markerNode.style.background = imageUrl ? `url("${imageUrl}") center / contain no-repeat` : "#f7b500";
           markerNode.style.color = "#131313";
           markerNode.style.fontWeight = "700";
           markerNode.style.cursor = "pointer";
@@ -143,6 +146,7 @@ function MapStubScreen() {
 
     return () => {
       isCancelled = true;
+      webMapInstanceRef.current = null;
       if (map) {
         map.remove();
       }
@@ -154,6 +158,43 @@ function MapStubScreen() {
     isWeb,
     markerAncients,
   ]);
+
+  const webChatPanelWidth = 424;
+
+  useEffect(() => {
+    const map = webMapInstanceRef.current;
+    if (!map || !isWeb) return;
+    const rightPad = selectedAncientSlug ? webChatPanelWidth : 0;
+    const padding = { top: 0, bottom: 0, left: 0, right: rightPad };
+
+    const target = selectedAncientSlug
+      ? markerAncients.find((a) => a.slug === selectedAncientSlug)
+      : null;
+
+    if (target) {
+      map.flyTo({
+        center: [target.longitude, target.latitude],
+        zoom: Math.max(map.getZoom(), 4),
+        padding,
+        duration: 1000,
+      });
+    } else {
+      map.easeTo({ padding, duration: 300 });
+    }
+
+    const container = map.getContainer() as HTMLElement | null;
+    if (!container) return;
+    const ctrls = container.querySelectorAll(
+      ".mapboxgl-ctrl-bottom-right, .mapboxgl-ctrl-bottom-left, .mapboxgl-ctrl-top-right",
+    );
+    for (const el of Array.from(ctrls)) {
+      const ctrl = el as HTMLElement;
+      ctrl.style.transition = "right 300ms ease, padding-right 300ms ease";
+      if (ctrl.classList.contains("mapboxgl-ctrl-bottom-right") || ctrl.classList.contains("mapboxgl-ctrl-top-right")) {
+        ctrl.style.right = `${rightPad}px`;
+      }
+    }
+  }, [selectedAncientSlug, isWeb, markerAncients]);
 
   if (!isNative && !isWeb) {
     return (
@@ -221,23 +262,32 @@ function MapStubScreen() {
 
   if (isWeb) {
     return (
-      <View style={{ flex: 1, flexDirection: "row" }}>
-        <View style={{ flex: 1 }}>
-          {webMapError ? (
-            <View className="absolute inset-x-4 top-4 z-10 rounded-md bg-red-950/80 p-3">
-              <Text className="font-body text-xs text-red-200">{webMapError}</Text>
-            </View>
-          ) : null}
-          {createElement("div", {
-            ref: webMapContainerRef,
-            style: { width: "100%", height: "100%" },
-          })}
-        </View>
+      <View style={{ flex: 1 }}>
+        {webMapError ? (
+          <View className="absolute inset-x-4 top-4 z-10 rounded-md bg-red-950/80 p-3">
+            <Text className="font-body text-xs text-red-200">{webMapError}</Text>
+          </View>
+        ) : null}
+        {createElement("div", {
+          ref: webMapContainerRef,
+          style: { width: "100%", height: "100%" },
+        })}
         {selectedAncientSlug ? (
-          <WebChatPanel
-            slug={selectedAncientSlug}
-            onClose={() => setSelectedAncientSlug(null)}
-          />
+          <View
+            style={{
+              position: "absolute",
+              top: 0,
+              right: 0,
+              bottom: 0,
+              width: webChatPanelWidth,
+              zIndex: 20,
+            }}
+          >
+            <WebChatPanel
+              slug={selectedAncientSlug}
+              onClose={() => setSelectedAncientSlug(null)}
+            />
+          </View>
         ) : null}
       </View>
     );
@@ -261,7 +311,7 @@ function MapStubScreen() {
 
   return (
     <View className="flex-1">
-      <MapView style={{ flex: 1 }} styleURL="mapbox://styles/mapbox/streets-v12">
+      <MapView style={{ flex: 1 }} styleURL="mapbox://styles/mapbox/light-v11">
         <Camera
           ref={cameraRef}
           defaultSettings={{
@@ -277,18 +327,28 @@ function MapStubScreen() {
             onSelected={() => {
               if (!ancient.slug) return;
               setSelectedAncient(ancient);
+              cameraRef.current?.flyTo([ancient.longitude, ancient.latitude], 1000);
             }}
           >
             <Pressable
-              className="h-10 w-10 items-center justify-center rounded-full border-2 border-background bg-accent"
+              className="h-10 w-10 items-center justify-center bg-accent"
               onPress={() => {
                 if (!ancient.slug) return;
                 setSelectedAncient(ancient);
+                cameraRef.current?.flyTo([ancient.longitude, ancient.latitude], 1000);
               }}
             >
-              <Text className="font-body text-xs font-semibold text-background">
-                {ancient.name.slice(0, 2).toUpperCase()}
-              </Text>
+              {getAncientImageSource(ancient.slug, ancient.avatarUrl) ? (
+                <Image
+                  source={getAncientImageSource(ancient.slug, ancient.avatarUrl)!}
+                  style={{ width: 40, height: 40 }}
+                  resizeMode="contain"
+                />
+              ) : (
+                <Text className="font-body text-xs font-semibold text-background">
+                  {getAncientInitials(ancient.name)}
+                </Text>
+              )}
             </Pressable>
           </PointAnnotation>
         ))}

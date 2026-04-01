@@ -68,6 +68,7 @@ describe("createApp", () => {
       id: 10,
       clientId,
       ancientId: 1,
+      title: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     });

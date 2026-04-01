@@ -7,6 +7,8 @@
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "test:run": "vitest run",
     "postinstall": "prisma generate --schema ../../packages/db/prisma/schema.prisma"
   },
   "dependencies": {
@@ -23,6 +25,7 @@
     "@types/node": "^24.6.0",
     "prisma": "^6.19.2",
     "tsx": "^4.21.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
   }
 }

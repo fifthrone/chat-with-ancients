@@ -13,10 +13,29 @@ type Coordinate = [number, number];
 
 const defaultCenter: Coordinate = [12.4964, 41.9028];
 
+function MapSelectAncientHint({ webZIndex }: { webZIndex?: number }) {
+  return (
+    <View
+      pointerEvents="none"
+      className="absolute inset-x-0 top-0 items-center px-4 pt-6"
+      style={webZIndex != null ? { zIndex: webZIndex } : undefined}
+    >
+      <View className="max-w-sm rounded-3xl border border-textPrimary/10 bg-surface px-8 py-4 shadow-lg shadow-black/10">
+        <Text className="text-center font-display font-semibold text-lg leading-snug text-textPrimary">
+          Chat With Ancients
+        </Text>
+        <Text className="mt-1.5 text-center font-body text-sm leading-relaxed text-textSecondary">
+        Select someone on the map to begin.
+        </Text>
+      </View>
+    </View>
+  );
+}
+
 function RootLayout() {
   return (
     <View className="flex-1 bg-background">
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
       <Outlet />
     </View>
   );
@@ -111,8 +130,8 @@ function MapStubScreen() {
           const imageUrl = getAncientWebImageUrl(ancient.slug, ancient.avatarUrl);
           markerNode.type = "button";
           markerNode.textContent = imageUrl ? "" : getAncientInitials(ancient.name);
-          markerNode.style.width = "60px";
-          markerNode.style.height = "80px";
+          markerNode.style.width = "100px";
+          markerNode.style.height = "120px";
           markerNode.style.borderRadius = "0";
           markerNode.style.background = imageUrl ? `url("${imageUrl}") center / contain no-repeat` : "#f7b500";
           markerNode.style.color = "#131313";
@@ -221,7 +240,7 @@ function MapStubScreen() {
   if (ancientsQuery.isLoading) {
     return (
       <View className="flex-1 items-center justify-center gap-3">
-        <ActivityIndicator />
+        <ActivityIndicator color="#111827" />
         <Text className="font-body text-sm text-textSecondary">Loading map data...</Text>
       </View>
     );
@@ -239,7 +258,7 @@ function MapStubScreen() {
         </Text>
         {isDev ? (
           <>
-            <Text className="font-body text-center text-xs text-red-300">{ancientsQuery.error.message}</Text>
+            <Text className="font-body text-center text-xs text-red-700">{ancientsQuery.error.message}</Text>
             <Text className="font-body text-center text-xs text-textSecondary">
               API URL: {EXPO_PUBLIC_API_URL || "not set"}
             </Text>
@@ -264,14 +283,15 @@ function MapStubScreen() {
     return (
       <View style={{ flex: 1 }}>
         {webMapError ? (
-          <View className="absolute inset-x-4 top-4 z-10 rounded-md bg-red-950/80 p-3">
-            <Text className="font-body text-xs text-red-200">{webMapError}</Text>
+          <View className="absolute inset-x-4 top-4 z-10 rounded-md bg-red-50 p-3">
+            <Text className="font-body text-xs text-red-700">{webMapError}</Text>
           </View>
         ) : null}
         {createElement("div", {
           ref: webMapContainerRef,
           style: { width: "100%", height: "100%" },
         })}
+        {!selectedAncientSlug ? <MapSelectAncientHint webZIndex={15} /> : null}
         {selectedAncientSlug ? (
           <View
             style={{
@@ -345,7 +365,7 @@ function MapStubScreen() {
                   resizeMode="contain"
                 />
               ) : (
-                <Text className="font-body text-xs font-semibold text-background">
+                <Text className="font-body text-xs font-semibold text-white">
                   {getAncientInitials(ancient.name)}
                 </Text>
               )}
@@ -353,6 +373,7 @@ function MapStubScreen() {
           </PointAnnotation>
         ))}
       </MapView>
+      {!selectedAncient ? <MapSelectAncientHint /> : null}
       {selectedAncient ? (
         <NativeChatSheet
           ancient={selectedAncient}

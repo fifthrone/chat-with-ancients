@@ -10,6 +10,7 @@ import type { UIMessage } from "ai";
 import { useAncient } from "../api/ancients";
 import { getAncientInitials, getAncientWebImageUrl } from "./ancientImages";
 import { getApiBaseUrl, useChatHydration } from "./useChatHydration";
+import { Plus, SendHorizontal, X } from "lucide-react";
 
 function WebChatThread({
   slug,
@@ -69,11 +70,11 @@ function WebChatThread({
             gap: 8,
             borderTop: "1px solid #e5e7eb",
             padding: 12,
-            backgroundColor: "rgba(255,255,255,0.72)",
+            backgroundColor: "#ffffff",
           }}
         >
           <ComposerPrimitive.Input
-            placeholder="Message..."
+            placeholder="Ask Anything..."
             style={{
               flex: 1,
               borderRadius: 12,
@@ -90,17 +91,17 @@ function WebChatThread({
           <ComposerPrimitive.Send
             style={{
               borderRadius: 12,
-              backgroundColor: "#111827",
+            //   backgroundColor: "#111827",
               padding: "10px 16px",
               border: "none",
               cursor: "pointer",
               fontFamily: "system-ui",
               fontSize: 14,
               fontWeight: 600,
-              color: "#ffffff",
+              color: "#000",
             }}
           >
-            Send
+            <SendHorizontal />
           </ComposerPrimitive.Send>
         </ComposerPrimitive.Root>
       </ThreadPrimitive.Root>
@@ -159,7 +160,7 @@ export function WebChatPanel({
   onClose: () => void;
 }) {
   const ancientQuery = useAncient(slug);
-  const hydration = useChatHydration(slug);
+  const { hydration, startNewChat } = useChatHydration(slug);
   const imageUrl = ancientQuery.data
     ? getAncientWebImageUrl(ancientQuery.data.slug, ancientQuery.data.avatarUrl)
     : null;
@@ -174,18 +175,54 @@ export function WebChatPanel({
         position: "relative" as const,
         display: "flex",
         flexDirection: "column" as const,
-        backgroundColor: "rgba(255,255,255,0.56)",
-        backdropFilter: "blur(18px)",
-        WebkitBackdropFilter: "blur(18px)",
-        border: "1px solid rgba(255,255,255,0.64)",
+        backgroundColor: "#ffffff",
+        backdropFilter: "blur(10px)",
+        WebkitBackdropFilter: "blur(10px)",
+        border: "1px solid rgba(17,24,39,0.12)",
         borderRadius: 20,
-        boxShadow: "0 10px 28px rgba(17, 24, 39, 0.18)",
+        boxShadow: "0 10px 28px rgba(17, 24, 39, 0.08)",
         overflow: "hidden",
       },
     },
     createElement(
       "button",
       {
+        type: "button",
+        onClick: () => {
+          void startNewChat();
+        },
+        disabled: hydration.status !== "ready",
+        title: "New chat",
+        "aria-label": "New chat",
+        style: {
+          position: "absolute" as const,
+          top: 12,
+          left: 12,
+          width: 36,
+          height: 36,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "rgba(255,255,255,0.9)",
+          border: "1px solid #e5e7eb",
+          borderRadius: 10,
+          color: hydration.status === "ready" ? "#111827" : "#9ca3af",
+          fontSize: 22,
+          fontWeight: 500,
+          cursor: hydration.status === "ready" ? "pointer" : "default",
+          lineHeight: 1,
+          zIndex: 1,
+        },
+      },
+      createElement(Plus, {
+        size: 20,
+        strokeWidth: 2.5,
+      }),
+    ),
+    createElement(
+      "button",
+      {
+        type: "button",
         onClick: onClose,
         style: {
           position: "absolute" as const,
@@ -201,7 +238,10 @@ export function WebChatPanel({
           zIndex: 1,
         },
       },
-      "\u00D7",
+      createElement(X, {
+        size: 20,
+        strokeWidth: 2.5,
+      }),
     ),
     createElement(
       "div",
@@ -212,7 +252,7 @@ export function WebChatPanel({
           justifyContent: "center",
           padding: "16px 16px 12px",
           borderBottom: "1px solid #e5e7eb",
-          backgroundColor: "rgba(255,255,255,0.5)",
+          backgroundColor: "#ffffff",
         },
       },
       createElement(
@@ -336,7 +376,7 @@ export function WebChatPanel({
             {
               style: {
                 padding: 16,
-                color: "#fca5a5",
+                color: "#b91c1c",
                 fontFamily: "system-ui",
                 fontSize: 14,
               },

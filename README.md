@@ -1,5 +1,15 @@
 # Chat With Ancients
 
+Chat With Ancients is a cross-platform, map-focused AI chat app where users explore places tied to historical figures and have guided conversations with them. It includes a mobile/web client, an API layer, and a database-backed content model for ancients, locations, chat history, and related app data.
+
+## Tech stack
+
+- **Expo + React Native** for the mobile-first app and shared cross-platform UI (including web builds).
+- **TanStack** (TanStack Query/Router ecosystem) for data fetching, cache management, and app navigation patterns.
+- **Express** for the backend HTTP API and application server logic.
+- **Prisma** for type-safe database access, schema management, and seeding workflows.
+- **CI/CD with GitHub Actions** for automated build/deploy workflows (including web deployment).
+
 ## Phase 2 local database setup
 
 1. Copy env template:

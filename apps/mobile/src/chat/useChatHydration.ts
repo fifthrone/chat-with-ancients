@@ -1,8 +1,11 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { UIMessage } from "ai";
 import { EXPO_PUBLIC_API_URL } from "../config/env";
 
 const chatClientIdStorageKey = "chat-with-ancients/client-id";
+
+const conversationClientOverrideKey = (slug: string) =>
+  `chat-with-ancients/conversation-client/${slug}`;
 
 export const getApiBaseUrl = () => EXPO_PUBLIC_API_URL.replace(/\/+$/, "");
 
@@ -31,7 +34,7 @@ const getStorage = (): KeyValueStorage => {
     const AsyncStorage = require("@react-native-async-storage/async-storage").default as
       | KeyValueStorage
       | undefined;
-    if (AsyncStorage?.getItem && AsyncStorage?.setItem) {
+    if (AsyncStorage) {
       cachedStorage = AsyncStorage;
       return cachedStorage;
     }
@@ -50,6 +53,20 @@ const getOrCreateClientId = async () => {
   const generated = `client_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
   await storage.setItem(chatClientIdStorageKey, generated);
   return generated;
+};
+
+const getResolvedClientIdForSlug = async (slug: string) => {
+  const base = await getOrCreateClientId();
+  const storage = getStorage();
+  const scoped = await storage.getItem(conversationClientOverrideKey(slug));
+  const trimmed = scoped?.trim();
+  return trimmed && trimmed.length > 0 ? trimmed : base;
+};
+
+const startNewConversationForSlug = async (slug: string) => {
+  const storage = getStorage();
+  const newId = `client_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+  await storage.setItem(conversationClientOverrideKey(slug), newId);
 };
 
 type PersistedMessage = {
@@ -84,8 +101,17 @@ export type HydrationState =
   | { status: "error"; message: string }
   | { status: "ready"; clientId: string; initialMessages: UIMessage[] };
 
-export function useChatHydration(slug: string): HydrationState {
+export function useChatHydration(slug: string): {
+  hydration: HydrationState;
+  startNewChat: () => Promise<void>;
+} {
+  const [session, setSession] = useState(0);
   const [hydration, setHydration] = useState<HydrationState>({ status: "loading" });
+
+  const startNewChat = useCallback(async () => {
+    await startNewConversationForSlug(slug);
+    setSession((n) => n + 1);
+  }, [slug]);
 
   useEffect(() => {
     let cancelled = false;
@@ -93,7 +119,7 @@ export function useChatHydration(slug: string): HydrationState {
 
     const load = async () => {
       try {
-        const clientId = await getOrCreateClientId();
+        const clientId = await getResolvedClientIdForSlug(slug);
         const rows = await fetchConversation(slug, clientId);
         const initialMessages = persistedToUIMessages(rows);
         if (!cancelled) {
@@ -111,7 +137,7 @@ export function useChatHydration(slug: string): HydrationState {
     return () => {
       cancelled = true;
     };
-  }, [slug]);
+  }, [slug, session]);
 
-  return hydration;
+  return { hydration, startNewChat };
 }

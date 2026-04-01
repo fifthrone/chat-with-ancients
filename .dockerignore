@@ -1,0 +1,17 @@
+# API image: docker build -f apps/api/Dockerfile .
+
+node_modules
+**/node_modules
+.git
+.github
+**/.expo
+**/dist
+*.log
+.DS_Store
+.env
+.env.*
+!**/.env.example
+
+# Mobile native trees are huge and not needed for the API image
+apps/mobile/ios
+apps/mobile/android

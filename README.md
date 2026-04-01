@@ -46,7 +46,58 @@ Expected seeded slugs:
 For physical devices, replace `EXPO_PUBLIC_API_URL` with your machine LAN IP, e.g.
 `http://192.168.1.10:4000`.
 
+## Phase 6 — Web deploy (GitHub Pages + Railway)
+
+**What runs where**
+
+| Piece | Host | Notes |
+| ----- | ---- | ----- |
+| Expo web (static) | **GitHub Pages** | Built by `.github/workflows/deploy-web.yml` on push to `main` |
+| API (Docker) | **Railway** | Builds `apps/api/Dockerfile` from repo root; entrypoint runs `db push` + seed, then starts Express |
+| MySQL | **Railway** | Managed MySQL plugin in the same Railway project |
+
+**GitHub**
+
+1. **Pages**: Repository **Settings → Pages → Build and deployment → Source**: **GitHub Actions**.
+2. **Actions variables** (Settings → Secrets and variables → Actions → Variables):
+   - `API_URL` — public Railway API base URL, e.g. `https://your-service.up.railway.app` (no trailing slash). Injected at build time as `EXPO_PUBLIC_API_URL`.
+3. **Actions secrets**:
+   - `EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN` — same value as local Mapbox token (required for the map on web).
+
+**GitHub Pages URL vs `baseUrl`**
+
+The app is configured for a **project site** at `https://<user>.github.io/chat-with-ancients/`. If your GitHub repo slug is different, set `expo.experiments.baseUrl` in `apps/mobile/app.json` to `"/<your-repo-name>/"`. For a **user** site (`https://<user>.github.io/` with repo `<user>.github.io`), use `"/"`.
+
+**Railway (one-time)**
+
+1. Create a project and add a **MySQL** service (Railway plugin). Note or reference the generated `DATABASE_URL`.
+2. Add a **new service** from **GitHub** → connect this repo.
+3. Under the API service **Settings**:
+   - **Root directory**: repository root (`.`).
+   - **Dockerfile path**: `apps/api/Dockerfile`.
+   - Optional **watch paths**: `apps/api/**`, `packages/db/**` so unrelated changes do not redeploy the API.
+4. **Variables** on the API service (examples):
+   - `DATABASE_URL` — reference the MySQL service variable (e.g. `${{MySQL.DATABASE_URL}}` in Railway’s variable UI).
+   - `GEMINI_API_KEY` — your Google AI key.
+   - `PORT` — set to `4000`, or use Railway’s `${{PORT}}` and ensure the service listens on `process.env.PORT` (the API already does).
+   - `CORS_ORIGINS` — your GitHub Pages origin, e.g. `https://<user>.github.io` (comma-separated if multiple).
+   - `CHAT_HISTORY_LIMIT` — optional, default `50`.
+
+Railway will rebuild the API image on pushes to the connected branch (e.g. `main`).
+
+**Local Docker (API + MySQL)**
+
+From the repo root, with `.env` matching `.env.example` (including `GEMINI_API_KEY` for chat):
+
+```bash
+docker compose -f compose.yml --env-file .env up -d --build
+```
+
+The `api` service uses `DATABASE_URL` built from `MYSQL_*` variables with host `mysql` (the Compose service name). Your host machine still uses `DATABASE_URL` with `localhost` when running `pnpm dev:api` outside Docker.
+
 ## Troubleshooting
 
 - If `db:push` fails with connection errors, verify `.env` exists and MySQL is healthy (`pnpm db:up`).
 - If Docker port `3306` is occupied, set `MYSQL_PORT` in `.env` and update `DATABASE_URL` to match.
+- GitHub Actions web deploy fails on Mapbox: add `EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN` as a repository secret.
+- GitHub Actions web deploy shows a blank app or wrong API host: set the `API_URL` variable to your deployed Railway API URL.

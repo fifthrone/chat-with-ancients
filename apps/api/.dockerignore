@@ -1,0 +1,18 @@
+# Used when build context is the repo root (recommended):
+#   docker build -f apps/api/Dockerfile .
+# Docker reads .dockerignore from the context root; see /.dockerignore for the real patterns.
+
+node_modules
+**/node_modules
+.git
+.github
+**/.expo
+**/dist
+*.log
+.DS_Store
+.env
+.env.*
+!**/.env.example
+
+apps/mobile/ios
+apps/mobile/android

@@ -29,7 +29,7 @@
       "favicon": "./assets/favicon.png"
     },
     "experiments": {
-      "baseUrl": "/"
+      "baseUrl": "/chat-with-ancients/"
     },
     "plugins": [
       "@rnmapbox/maps"

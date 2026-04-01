@@ -19,5 +19,24 @@ services:
     volumes:
       - mysql-data:/var/lib/mysql
 
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: cwa-api
+    restart: unless-stopped
+    ports:
+      - "${API_PORT:-4000}:4000"
+    environment:
+      # Hostname `mysql` is the compose service name on the default network.
+      DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+      PORT: "4000"
+      CHAT_HISTORY_LIMIT: ${CHAT_HISTORY_LIMIT:-50}
+    depends_on:
+      mysql:
+        condition: service_healthy
+
 volumes:
   mysql-data:

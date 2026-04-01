@@ -9,7 +9,7 @@ const LOCAL_ANCIENT_IMAGES: Record<string, ImageSourcePropType> = {
   cleopatra: require("../../assets/ancients/cleopatra.png"),
   confucius: require("../../assets/ancients/confucius.png"),
   "hannibal-barca": require("../../assets/ancients/hannibal-barca.png"),
-  hypatia: require("../../assets/ancients/Hypatia.png"),
+  hypatia: require("../../assets/ancients/hypatia.png"),
   "julius-caesar": require("../../assets/ancients/julius-caesar.png"),
   plato: require("../../assets/ancients/plato.png"),
   socrates: require("../../assets/ancients/socrates.png"),

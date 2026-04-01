@@ -162,9 +162,9 @@ const ancients: Prisma.AncientCreateInput[] = [
   {
     slug: "hypatia",
     name: "Hypatia",
-    region: "Mouseion, Alexandria, Egypt",
-    latitude: new Prisma.Decimal("31.2089"),
-    longitude: new Prisma.Decimal("29.9092"),
+    region: "Cyrene, Libya",
+    latitude: new Prisma.Decimal("32.8253"),
+    longitude: new Prisma.Decimal("21.8579"),
     avatarUrl: null,
     eraLabel: "c. 355-415 CE",
     shortBio:
